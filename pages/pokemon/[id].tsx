@@ -1,9 +1,9 @@
 import { GetStaticPaths, GetStaticProps, NextPage } from "next";
 
-import { PokemonInfo } from "@/interfaces";
-import { pokeApi } from "@/api";
 import { Layout } from "@/components/layouts";
 import PokemonDetails from "@/components/pokemon/PokemonDetails";
+import { PokemonInfo } from "@/interfaces";
+import { getPokemonInfo } from "@/utils";
 
 
 export const getStaticPaths: GetStaticPaths = () => {
@@ -13,25 +13,29 @@ export const getStaticPaths: GetStaticPaths = () => {
 
   return {
     paths: pokemonsPaths,
-    fallback: false,
+    fallback: 'blocking'
   };
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const { id } = params as { id: string };
 
-  const { data } = await pokeApi.get<PokemonInfo>(`/pokemon/${id}`);
+  const pokemon = await getPokemonInfo(id)
 
-  const pokemon = {
-    name: data.name,
-    id: data.id,  
-    sprites: data.sprites
+  if(!pokemon){
+    return{
+      redirect:{
+        destination: '/',
+        permanent: false
+      }
+    }
   }
 
   return {
     props: {
       pokemon
     },
+    revalidate: 86400 //60*60*24
   };
 };
 
